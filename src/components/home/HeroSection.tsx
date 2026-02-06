@@ -19,7 +19,7 @@ export function HeroSection() {
 
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 text-center">
-        <div className="max-w-4xl mx-auto my-[10px] mb-[10px]">
+        <div className="max-w-4xl mx-auto my-[10px] mb-[10px] opacity-100 shadow-none pl-0 pt-0 pb-0">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-primary/80 backdrop-blur-sm px-4 py-2 rounded-full mb-6 animate-fade-in">
             <span className="text-primary-foreground text-sm font-medium">
