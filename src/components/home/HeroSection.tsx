@@ -14,12 +14,12 @@ export function HeroSection() {
       <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
       backgroundImage: `url('/lovable-uploads/6981c508-f88f-4bdf-baa6-6c416cf4c78d.png')`
     }}>
-        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background/60 my-0" />
       </div>
 
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 text-center">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto my-[10px] mb-[10px]">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-primary/80 backdrop-blur-sm px-4 py-2 rounded-full mb-6 animate-fade-in">
             <span className="text-primary-foreground text-sm font-medium">
@@ -28,14 +28,14 @@ export function HeroSection() {
           </div>
 
           {/* Main Heading */}
-          <h1 className="font-serif text-5xl md:text-7xl font-bold mb-6 animate-fade-in-up text-primary text-center lg:text-7xl" style={{
+          <h1 className="font-serif text-5xl md:text-7xl font-bold mb-6 animate-fade-in-up text-center lg:text-7xl text-secondary-foreground" style={{
           animationDelay: '0.1s'
         }}>
             Whattheficusthat
           </h1>
 
           {/* Tagline */}
-          <p className="text-xl md:text-2xl mb-8 animate-fade-in-up font-serif text-primary" style={{
+          <p className="text-xl mb-8 animate-fade-in-up font-serif text-secondary-foreground md:text-3xl" style={{
           animationDelay: '0.2s'
         }}>
             Your Plant Plug 🔌🍀 — Rare & Exotic Plants, Shipped to Your Door
