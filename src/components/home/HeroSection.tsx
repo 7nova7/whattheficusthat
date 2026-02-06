@@ -16,7 +16,7 @@ export function HeroSection() {
         className="absolute inset-0 bg-cover bg-no-repeat"
         style={{
           backgroundImage: `url('/lovable-uploads/6981c508-f88f-4bdf-baa6-6c416cf4c78d.png')`,
-          backgroundPosition: "center 100%", // Adjust this value: 50% = center, higher % = image moves down
+          backgroundPosition: "center 300%", // Adjust this value: 50% = center, higher % = image moves down
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background/60 my-0" />
