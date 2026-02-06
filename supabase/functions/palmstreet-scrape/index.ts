@@ -1,0 +1,168 @@
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+};
+
+interface ProductData {
+  name: string;
+  price: number;
+  image_url: string | null;
+  palmstreet_url: string;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { url } = await req.json();
+
+    if (!url) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'URL is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate it's a PalmStreet URL
+    if (!url.includes('palmstreet.app')) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'URL must be a PalmStreet link' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const apiKey = Deno.env.get('FIRECRAWL_API_KEY');
+    if (!apiKey) {
+      console.error('FIRECRAWL_API_KEY not configured');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Firecrawl connector not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Scraping PalmStreet URL:', url);
+
+    // Scrape the page using Firecrawl
+    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: url,
+        formats: ['markdown', 'html'],
+        onlyMainContent: true,
+        waitFor: 3000, // Wait for JS to render
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Firecrawl API error:', data);
+      return new Response(
+        JSON.stringify({ success: false, error: data.error || `Request failed with status ${response.status}` }),
+        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Extract product data from the scraped content
+    const markdown = data.data?.markdown || data.markdown || '';
+    const html = data.data?.html || data.html || '';
+    const metadata = data.data?.metadata || data.metadata || {};
+
+    // Parse product information
+    const productData = extractProductData(markdown, html, metadata, url);
+
+    if (!productData.name) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Could not extract product name from page' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Extracted product data:', productData);
+
+    return new Response(
+      JSON.stringify({ success: true, data: productData }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Error scraping PalmStreet:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to scrape page';
+    return new Response(
+      JSON.stringify({ success: false, error: errorMessage }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
+
+function extractProductData(markdown: string, html: string, metadata: Record<string, unknown>, url: string): ProductData {
+  let name = '';
+  let price = 0;
+  let image_url: string | null = null;
+
+  // Try to get title from metadata first
+  if (metadata.title && typeof metadata.title === 'string') {
+    // Clean up the title - remove site name suffix
+    name = metadata.title.replace(/\s*[-|]\s*PalmStreet.*$/i, '').trim();
+  }
+
+  // Try to extract name from markdown if not found
+  if (!name) {
+    // Look for the first heading
+    const headingMatch = markdown.match(/^#\s+(.+)$/m);
+    if (headingMatch) {
+      name = headingMatch[1].trim();
+    }
+  }
+
+  // Extract price - look for dollar amounts
+  const pricePatterns = [
+    /\$(\d+(?:,\d{3})*(?:\.\d{2})?)/,  // $25.00 or $1,000.00
+    /Price[:\s]*\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/i, // Price: 25.00
+    /(\d+(?:,\d{3})*(?:\.\d{2})?)\s*(?:USD|dollars?)/i, // 25.00 USD
+  ];
+
+  for (const pattern of pricePatterns) {
+    const match = markdown.match(pattern) || html.match(pattern);
+    if (match) {
+      price = parseFloat(match[1].replace(/,/g, ''));
+      break;
+    }
+  }
+
+  // Extract image URL from HTML
+  const imgPatterns = [
+    /<img[^>]+src=["']([^"']+(?:palmstreet|plant|product)[^"']*\.(?:jpg|jpeg|png|webp))/i,
+    /<img[^>]+src=["']([^"']+\.(?:jpg|jpeg|png|webp))/i,
+    /og:image[^>]+content=["']([^"']+)/i,
+  ];
+
+  for (const pattern of imgPatterns) {
+    const match = html.match(pattern);
+    if (match && match[1]) {
+      image_url = match[1];
+      // Make sure it's an absolute URL
+      if (image_url.startsWith('/')) {
+        image_url = `https://palmstreet.app${image_url}`;
+      }
+      break;
+    }
+  }
+
+  // Check metadata for image
+  if (!image_url && metadata.ogImage && typeof metadata.ogImage === 'string') {
+    image_url = metadata.ogImage;
+  }
+
+  return {
+    name,
+    price,
+    image_url,
+    palmstreet_url: url,
+  };
+}
