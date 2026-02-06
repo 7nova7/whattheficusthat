@@ -1,8 +1,14 @@
-import { Leaf, Instagram, ExternalLink } from 'lucide-react';
+import { Leaf, Instagram, ExternalLink, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const { user, loading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdminCheck(user?.id);
+
+  const showAdminLink = !authLoading && !adminLoading && user && isAdmin;
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -106,9 +112,20 @@ export function Footer() {
           <p className="text-sm text-primary-foreground/70">
             © {currentYear} Whattheficusthat. All rights reserved.
           </p>
-          <p className="text-sm text-primary-foreground/70">
-            Made with 🌱 for plant lovers everywhere
-          </p>
+          <div className="flex items-center gap-4">
+            {showAdminLink && (
+              <Link
+                to="/admin"
+                className="flex items-center gap-1 text-sm text-primary-foreground/50 hover:text-primary-foreground/80 transition-colors"
+              >
+                <Settings className="h-3 w-3" />
+                Admin
+              </Link>
+            )}
+            <p className="text-sm text-primary-foreground/70">
+              Made with 🌱 for plant lovers everywhere
+            </p>
+          </div>
         </div>
       </div>
     </footer>
