@@ -1,3 +1,5 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
@@ -43,6 +45,11 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Initialize Supabase client for storage
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     console.log('Scraping PalmStreet URL:', url);
 
     // Scrape the page using Firecrawl
@@ -83,6 +90,45 @@ Deno.serve(async (req) => {
         JSON.stringify({ success: false, error: 'Could not extract product name from page' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Download and upload image to permanent storage
+    if (productData.image_url) {
+      try {
+        console.log('Downloading image:', productData.image_url);
+        const imageResponse = await fetch(productData.image_url);
+        
+        if (imageResponse.ok) {
+          const imageBlob = await imageResponse.blob();
+          const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+          const extension = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
+          const fileName = `palmstreet-${Date.now()}-${Math.random().toString(36).substring(7)}.${extension}`;
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('product-images')
+            .upload(fileName, imageBlob, {
+              contentType,
+              upsert: false,
+            });
+
+          if (uploadError) {
+            console.error('Upload error:', uploadError);
+          } else {
+            // Get public URL
+            const { data: publicUrlData } = supabase.storage
+              .from('product-images')
+              .getPublicUrl(fileName);
+            
+            productData.image_url = publicUrlData.publicUrl;
+            console.log('Image uploaded successfully:', productData.image_url);
+          }
+        } else {
+          console.error('Failed to download image:', imageResponse.status);
+        }
+      } catch (imgError) {
+        console.error('Error processing image:', imgError);
+        // Keep the original URL if upload fails
+      }
     }
 
     console.log('Extracted product data:', productData);
@@ -165,11 +211,12 @@ function extractProductData(markdown: string, html: string, metadata: Record<str
     }
   }
 
-  // Extract image URL from HTML
+  // Extract image URL from HTML - look for og:image first (most reliable)
   const imgPatterns = [
-    /<img[^>]+src=["']([^"']+(?:palmstreet|plant|product)[^"']*\.(?:jpg|jpeg|png|webp))/i,
-    /<img[^>]+src=["']([^"']+\.(?:jpg|jpeg|png|webp))/i,
-    /og:image[^>]+content=["']([^"']+)/i,
+    /property="og:image"[^>]+content="([^"]+)"/i,
+    /content="([^"]+)"[^>]+property="og:image"/i,
+    /<img[^>]+src="([^"]+(?:palmstreet|plant|product)[^"]*\.(?:jpg|jpeg|png|webp))"/i,
+    /<img[^>]+src="([^"]+\.(?:jpg|jpeg|png|webp))"/i,
   ];
 
   for (const pattern of imgPatterns) {

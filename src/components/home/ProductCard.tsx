@@ -1,7 +1,7 @@
+import { Link } from 'react-router-dom';
 import { ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface Product {
@@ -40,25 +40,29 @@ export function ProductCard({ product, index = 0, isInView = true }: ProductCard
       )}
       style={{ transitionDelay: `${index * 100}ms` }}
     >
-      {/* Image */}
-      <div className="relative aspect-square overflow-hidden">
-        <img
-          src={imageUrl}
-          alt={product.name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-        />
-        {!product.is_available && (
-          <div className="absolute inset-0 bg-foreground/60 flex items-center justify-center">
-            <span className="text-background font-semibold text-lg">Sold Out</span>
-          </div>
-        )}
-      </div>
+      {/* Clickable Image */}
+      <Link to={`/product/${product.id}`} className="block">
+        <div className="relative aspect-square overflow-hidden">
+          <img
+            src={imageUrl}
+            alt={product.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+          {!product.is_available && (
+            <div className="absolute inset-0 bg-foreground/60 flex items-center justify-center">
+              <span className="text-background font-semibold text-lg">Sold Out</span>
+            </div>
+          )}
+        </div>
+      </Link>
 
       {/* Content */}
       <CardContent className="p-4">
-        <h3 className="font-serif text-lg font-semibold text-foreground mb-1 line-clamp-1">
-          {product.name}
-        </h3>
+        <Link to={`/product/${product.id}`}>
+          <h3 className="font-serif text-lg font-semibold text-foreground mb-1 line-clamp-1 hover:text-primary transition-colors">
+            {product.name}
+          </h3>
+        </Link>
         {product.description && (
           <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
             {product.description}
