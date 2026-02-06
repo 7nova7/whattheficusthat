@@ -1,163 +1,123 @@
 
 
-# Plan: Fix Admin Dashboard Race Condition
+# PalmStreet Bulk Import Feature
 
-## Root Cause Analysis
+## Overview
 
-The admin dashboard redirect happens due to a timing issue between authentication and role checking:
+This plan adds a bulk import feature to quickly import multiple plant products from PalmStreet URLs. The system will scrape each URL to extract the product name, price, and image, then save them to your products database.
 
-1. **Initial State**: When the page loads, `user` is `null` (auth is loading)
-2. **useAdminCheck Called**: `useAdminCheck(undefined)` is called because `user?.id` is `undefined`
-3. **Premature Result**: The hook immediately sets `isAdmin = false` and `loading = false` when `userId` is undefined
-4. **Race Condition**: The redirect useEffect sees `adminLoading = false` and `isAdmin = false`, triggering a redirect to homepage
-5. **Too Late**: By the time auth loads and the correct `userId` is available, you've already been redirected
+## How It Will Work
 
-## Solution
+1. On the admin Products page, you'll see a new "Import from PalmStreet" button
+2. Clicking it opens a dialog where you can paste multiple PalmStreet URLs (one per line)
+3. Click "Import" to process all links - the system will:
+   - Scrape each PalmStreet page to extract product details
+   - Create products with the name, price, image, and link back to PalmStreet
+4. A progress indicator shows which links are being processed
+5. Successfully imported products appear in your products list
 
-The fix requires ensuring that `useAdminCheck` does NOT set `loading = false` until we actually know whether we have a user or not. We need to coordinate the loading states properly.
+## Requirements
 
-### Approach: Keep adminLoading true until auth is resolved
+This feature requires the **Firecrawl connector** to scrape PalmStreet pages (they use heavy JavaScript rendering that simple fetch requests cannot handle). The connector will need to be set up before use.
 
-Instead of having `useAdminCheck` immediately return when `userId` is undefined, we need to:
+---
 
-1. **Option A**: Pass `authLoading` to `useAdminCheck` so it knows to wait
-2. **Option B**: Only call `useAdminCheck` after auth has finished loading (cleaner)
+## Technical Details
 
-I'll implement **Option B** - restructure the logic so the admin check only starts after we have confirmed auth state.
+### 1. Connect Firecrawl
 
-## Files to Modify
+Set up the Firecrawl connector to enable web scraping capabilities. This provides the API key needed to scrape JavaScript-rendered pages like PalmStreet.
+
+### 2. Create Backend Function
+
+Create a new edge function `palmstreet-scrape` that:
+- Accepts a PalmStreet URL
+- Uses Firecrawl to scrape the page
+- Extracts product data (name, price, image URL) from the page content
+- Returns structured product data
 
 ```text
-src/hooks/useAdminCheck.ts
-└── Return loading=true when userId is undefined (don't immediately resolve)
-
-src/components/admin/AdminLayout.tsx  
-└── Add additional guard to only redirect when we're certain about auth state
+supabase/functions/palmstreet-scrape/index.ts
 ```
 
-## Technical Implementation
+The function will:
+- Validate the URL is a PalmStreet link
+- Call Firecrawl API to scrape the page with JavaScript rendering
+- Parse the response to extract product details
+- Return structured JSON with name, price, and image_url
 
-### useAdminCheck.ts Changes
+### 3. Create API Helper
 
-```typescript
-// Current problematic behavior:
-if (!userId) {
-  setIsAdmin(false);
-  setLoading(false);  // This causes the race condition!
-  return;
-}
+Add a helper function to call the scrape endpoint:
 
-// Fixed behavior:
-if (!userId) {
-  setIsAdmin(false);
-  // Keep loading = true until we get a real userId
-  // The parent component should handle the "no user" case
-  return;
-}
+```text
+src/lib/api/palmstreet.ts
 ```
 
-Wait, this won't work either because then `loading` would never become false for unauthenticated users.
+### 4. Create Import Dialog Component
 
-**Better approach**: The real fix is in `AdminLayout.tsx`. We need to ensure we don't trigger the non-admin redirect until BOTH:
-- `authLoading` is false (auth finished)
-- If there IS a user, `adminLoading` must also be false
+Build a new dialog component for bulk importing:
 
-Currently the hook sets `loading=false` immediately when `userId` is undefined. The fix is to track whether the admin check was actually performed vs just skipped.
-
-### Revised Solution
-
-Create a more robust state machine:
-
-1. **useAdminCheck** will return an additional flag: `checked: boolean` - indicates whether a check was actually performed
-2. **AdminLayout** will use this to know if it should trust `isAdmin`
-
-Actually, the cleanest fix is simpler - we just need to ensure `useAdminCheck` keeps `loading: true` until a real check happens, and only return `loading: false` with `isAdmin: false` when we actually query the database.
-
-### Final Approach
-
-Modify `useAdminCheck` to:
-- Only set `loading: false` AFTER making the actual RPC call
-- When `userId` is undefined, keep `loading: true` (because we're waiting for auth to give us a userId)
-
-This means unauthenticated users will see the loading spinner until `AdminLayout`'s auth redirect kicks them to login.
-
-## Implementation Details
-
-### useAdminCheck.ts
-
-```typescript
-export function useAdminCheck(userId: string | undefined) {
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    // Reset loading state when userId changes
-    setLoading(true);
-    
-    async function checkAdminRole() {
-      if (!userId) {
-        // Don't set loading to false - let the auth system handle this
-        // The AdminLayout will redirect to login if there's no user
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase.rpc('has_role', {
-          _user_id: userId,
-          _role: 'admin',
-        });
-
-        if (error) {
-          console.error('Error checking admin role:', error);
-          setIsAdmin(false);
-        } else {
-          setIsAdmin(data === true);
-        }
-      } catch (err) {
-        console.error('Error checking admin role:', err);
-        setIsAdmin(false);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    checkAdminRole();
-  }, [userId]);
-
-  return { isAdmin, loading };
-}
+```text
+src/components/admin/PalmStreetImportDialog.tsx
 ```
 
-### AdminLayout.tsx
+Features:
+- Large textarea for pasting multiple URLs (one per line)
+- Import button with loading state
+- Progress indicator showing current/total
+- Success/error feedback for each URL
+- Summary of imported products
 
-Update the render logic to be clearer:
+### 5. Update Admin Products Page
 
-```typescript
-// Show loading while auth OR admin check is in progress
-if (authLoading || (user && adminLoading)) {
-  return <LoadingSpinner />;
-}
+Modify the admin products page to include:
+- New "Import from PalmStreet" button in the header
+- Integration with the import dialog
 
-// If no user after auth completes, redirect will happen via useEffect
-if (!user) {
-  return null;
-}
-
-// If user exists but is not admin, redirect will happen via useEffect  
-if (!isAdmin) {
-  return null;
-}
-
-// User is authenticated and is admin - show dashboard
-return <AdminDashboard />;
+```text
+src/pages/admin/AdminProducts.tsx
 ```
 
-## Expected Behavior After Fix
+### Component Structure
 
-1. Navigate to `/admin`
-2. See loading spinner while auth checks session
-3. If no user → redirect to `/admin/login`
-4. If user exists → loading spinner continues while admin role is checked
-5. If admin → dashboard appears
-6. If not admin → redirect to homepage
+```text
++--------------------------------------------------+
+|  Products                                         |
+|  Manage your plant inventory                      |
+|                                                   |
+|  [+ Add Product]  [Import from PalmStreet]        |
++--------------------------------------------------+
+|                                                   |
+|  (Product Table)                                  |
+|                                                   |
++--------------------------------------------------+
+
+Import Dialog:
++--------------------------------------------------+
+|  Import from PalmStreet                     [X]  |
++--------------------------------------------------+
+|                                                   |
+|  Paste PalmStreet product URLs (one per line):   |
+|  +----------------------------------------------+|
+|  | https://palmstreet.app/product/abc123        ||
+|  | https://palmstreet.app/product/def456        ||
+|  | https://palmstreet.app/product/ghi789        ||
+|  +----------------------------------------------+|
+|                                                   |
+|  Progress: 2/3 imported                          |
+|  [==========----------] 66%                      |
+|                                                   |
+|  [Cancel]                        [Import All]    |
++--------------------------------------------------+
+```
+
+### Files to Create/Modify
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `supabase/functions/palmstreet-scrape/index.ts` | Create | Backend scraping logic |
+| `src/lib/api/palmstreet.ts` | Create | Frontend API helper |
+| `src/components/admin/PalmStreetImportDialog.tsx` | Create | Import UI component |
+| `src/pages/admin/AdminProducts.tsx` | Modify | Add import button |
 
