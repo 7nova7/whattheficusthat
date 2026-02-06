@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Package } from 'lucide-react';
+import { Edit, Trash2, Package, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Tables, Enums } from '@/integrations/supabase/types';
@@ -85,6 +85,7 @@ export function ProductTable({ products, onEdit, onRefresh }: ProductTableProps)
               <TableHead>Price</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Featured</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -111,6 +112,11 @@ export function ProductTable({ products, onEdit, onRefresh }: ProductTableProps)
                   <Badge variant={product.is_available ? 'default' : 'secondary'}>
                     {product.is_available ? 'Available' : 'Sold Out'}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  {product.is_featured && (
+                    <Star className="h-4 w-4 text-accent fill-accent" />
+                  )}
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">

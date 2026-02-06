@@ -40,6 +40,7 @@ const productSchema = z.object({
   category: z.enum(['rare_finds', 'aroids', 'hoyas', 'beginner_friendly', 'other']),
   palmstreet_url: z.string().url().optional().or(z.literal('')),
   is_available: z.boolean(),
+  is_featured: z.boolean(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -72,6 +73,7 @@ export function ProductForm({ open, onOpenChange, product, onSuccess }: ProductF
       category: 'other',
       palmstreet_url: '',
       is_available: true,
+      is_featured: false,
     },
   });
 
@@ -84,6 +86,7 @@ export function ProductForm({ open, onOpenChange, product, onSuccess }: ProductF
         category: product.category,
         palmstreet_url: product.palmstreet_url || '',
         is_available: product.is_available,
+        is_featured: product.is_featured,
       });
       setImageUrl(product.image_url);
     } else {
@@ -94,6 +97,7 @@ export function ProductForm({ open, onOpenChange, product, onSuccess }: ProductF
         category: 'other',
         palmstreet_url: '',
         is_available: true,
+        is_featured: false,
       });
       setImageUrl(null);
     }
@@ -110,6 +114,7 @@ export function ProductForm({ open, onOpenChange, product, onSuccess }: ProductF
         category: data.category,
         palmstreet_url: data.palmstreet_url || null,
         is_available: data.is_available,
+        is_featured: data.is_featured,
         image_url: imageUrl,
       };
 
@@ -252,6 +257,27 @@ export function ProductForm({ open, onOpenChange, product, onSuccess }: ProductF
                     <FormLabel>Available</FormLabel>
                     <p className="text-sm text-muted-foreground">
                       Show this product on the website
+                    </p>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="is_featured"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel>Featured</FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      Display on homepage featured section
                     </p>
                   </div>
                   <FormControl>
