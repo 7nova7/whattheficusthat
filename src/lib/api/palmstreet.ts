@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface PalmStreetProduct {
   name: string;
   price: number;
+  description: string | null;
   image_url: string | null;
   palmstreet_url: string;
 }
@@ -39,6 +40,7 @@ export const palmstreetApi = {
       const { error } = await supabase.from('products').insert({
         name: product.name,
         price: product.price,
+        description: product.description,
         image_url: product.image_url,
         palmstreet_url: product.palmstreet_url,
         is_available: true,
