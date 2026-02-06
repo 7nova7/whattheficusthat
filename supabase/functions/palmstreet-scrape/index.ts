@@ -211,27 +211,30 @@ function extractProductData(markdown: string, html: string, metadata: Record<str
     }
   }
 
-  // Extract image URL from HTML - look for og:image first (most reliable)
+  // Extract image URL - prioritize plant images from the image gallery
+  // Look for ogcdn.palmstreet.app or plantstory.app URLs which are actual plant photos
   const imgPatterns = [
-    /property="og:image"[^>]+content="([^"]+)"/i,
-    /content="([^"]+)"[^>]+property="og:image"/i,
-    /<img[^>]+src="([^"]+(?:palmstreet|plant|product)[^"]*\.(?:jpg|jpeg|png|webp))"/i,
-    /<img[^>]+src="([^"]+\.(?:jpg|jpeg|png|webp))"/i,
+    // Main product image from plantstory/imaginary resize API
+    /src="(https:\/\/api\.plantstory\.app\/imaginary\/resize\?url=https:\/\/ogcdn\.palmstreet\.app[^"&]+)/i,
+    // Direct ogcdn URLs
+    /src="(https:\/\/ogcdn\.palmstreet\.app\/[^"]+\.(?:jpg|jpeg|png|webp))"/i,
+    // Plantstory URLs with any image
+    /(https:\/\/api\.plantstory\.app\/imaginary\/resize\?url=[^"&\s]+)/i,
+    // ogcdn in any format
+    /(https:\/\/ogcdn\.palmstreet\.app\/[^"'\s]+\.(?:jpg|jpeg|png|webp))/i,
   ];
 
   for (const pattern of imgPatterns) {
     const match = html.match(pattern);
     if (match && match[1]) {
       image_url = match[1];
-      // Make sure it's an absolute URL
-      if (image_url.startsWith('/')) {
-        image_url = `https://palmstreet.app${image_url}`;
-      }
+      // Clean up HTML entities
+      image_url = image_url.replace(/&amp;/g, '&');
       break;
     }
   }
 
-  // Check metadata for image
+  // Fallback: Check og:image metadata
   if (!image_url && metadata.ogImage && typeof metadata.ogImage === 'string') {
     image_url = metadata.ogImage;
   }
