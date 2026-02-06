@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Link } from 'react-router-dom';
 import { ProductCard } from './ProductCard';
 import { useInView } from '@/hooks/useInView';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Product {
   id: string;
@@ -15,14 +16,6 @@ interface Product {
   palmstreet_url: string | null;
   is_available: boolean;
 }
-
-const categories = [
-  { value: 'all', label: 'All Plants' },
-  { value: 'rare_finds', label: 'Rare Finds' },
-  { value: 'aroids', label: 'Aroids' },
-  { value: 'hoyas', label: 'Hoyas' },
-  { value: 'beginner_friendly', label: 'Beginner Friendly' },
-];
 
 // Sample products for when database is empty
 const sampleProducts: Product[] = [
@@ -76,22 +69,11 @@ const sampleProducts: Product[] = [
     palmstreet_url: null,
     is_available: true,
   },
-  {
-    id: '6',
-    name: 'Pothos Golden',
-    description: 'Easy-care trailing vine with golden variegation',
-    price: 15,
-    category: 'beginner_friendly',
-    image_url: 'https://images.unsplash.com/photo-1572688484438-313a6e50c333?q=80&w=800',
-    palmstreet_url: null,
-    is_available: true,
-  },
 ];
 
 export function ShopSection() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('all');
   const [ref, isInView] = useInView<HTMLElement>();
 
   useEffect(() => {
@@ -100,15 +82,16 @@ export function ShopSection() {
         const { data, error } = await supabase
           .from('products')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(5);
 
         if (error) throw error;
         
-        // If no products in database, use sample products
-        setProducts(data && data.length > 0 ? data : sampleProducts);
+        // If no products in database, use sample products (limited to 5)
+        setProducts(data && data.length > 0 ? data : sampleProducts.slice(0, 5));
       } catch (error) {
         console.error('Error fetching products:', error);
-        setProducts(sampleProducts);
+        setProducts(sampleProducts.slice(0, 5));
       } finally {
         setLoading(false);
       }
@@ -117,10 +100,6 @@ export function ShopSection() {
     fetchProducts();
   }, []);
 
-  const filteredProducts = activeCategory === 'all' 
-    ? products 
-    : products.filter(p => p.category === activeCategory);
-
   return (
     <section id="shop" ref={ref} className="py-16 md:py-24 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -128,7 +107,7 @@ export function ShopSection() {
         <div className="text-center mb-12">
           <span className="text-accent font-medium mb-2 block">Our Collection</span>
           <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Shop Plants 🌿
+            Featured Plants 🌿
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Handpicked rare and exotic plants, ready to ship to your door. 
@@ -136,43 +115,37 @@ export function ShopSection() {
           </p>
         </div>
 
-        {/* Category Tabs */}
-        <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
-          <TabsList className="flex flex-wrap justify-center gap-2 bg-transparent h-auto mb-8">
-            {categories.map((category) => (
-              <TabsTrigger
-                key={category.value}
-                value={category.value}
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4 py-2"
-              >
-                {category.label}
-              </TabsTrigger>
+        {/* Products Grid */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No plants available at the moment.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+            {products.map((product, index) => (
+              <ProductCard 
+                key={product.id} 
+                product={product} 
+                index={index}
+                isInView={isInView}
+              />
             ))}
-          </TabsList>
+          </div>
+        )}
 
-          <TabsContent value={activeCategory} className="mt-0">
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : filteredProducts.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No plants found in this category.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map((product, index) => (
-                  <ProductCard 
-                    key={product.id} 
-                    product={product} 
-                    index={index}
-                    isInView={isInView}
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+        {/* View All Button */}
+        <div className="text-center mt-10">
+          <Button asChild size="lg" variant="outline" className="group">
+            <Link to="/shop">
+              View All Plants
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </Button>
+        </div>
       </div>
     </section>
   );
