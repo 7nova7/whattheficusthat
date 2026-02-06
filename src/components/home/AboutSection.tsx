@@ -34,7 +34,7 @@ export function AboutSection() {
           {/* Image */}
           <div className={cn('relative transition-all duration-700', isInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8')}>
             <div className="aspect-[4/5] rounded-2xl overflow-hidden">
-              <img alt="Greenhouse with beautiful plants" className="w-full h-full object-cover" src="/lovable-uploads/a22b6b88-e1a8-41ca-804a-7afecbbdd281.webp" />
+              <img alt="Greenhouse with beautiful plants" className="w-full h-full object-cover" src="/lovable-uploads/4cf4111b-2adf-4517-a7cd-775d21530f37.webp" />
             </div>
             {/* Decorative element */}
             <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-secondary/30 rounded-2xl -z-10" />
