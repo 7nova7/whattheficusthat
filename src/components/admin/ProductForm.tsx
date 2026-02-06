@@ -16,13 +16,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -31,13 +24,12 @@ import { ImageUpload } from './ImageUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import type { Tables, Enums } from '@/integrations/supabase/types';
+import type { Tables } from '@/integrations/supabase/types';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   price: z.coerce.number().min(0.01, 'Price must be greater than 0'),
   description: z.string().max(500).optional(),
-  category: z.enum(['rare_finds', 'aroids', 'hoyas', 'beginner_friendly', 'other']),
   palmstreet_url: z.string().url().optional().or(z.literal('')),
   is_available: z.boolean(),
   is_featured: z.boolean(),
@@ -52,14 +44,6 @@ interface ProductFormProps {
   onSuccess: () => void;
 }
 
-const categoryLabels: Record<Enums<'product_category'>, string> = {
-  rare_finds: 'Rare Finds',
-  aroids: 'Aroids',
-  hoyas: 'Hoyas',
-  beginner_friendly: 'Beginner Friendly',
-  other: 'Other',
-};
-
 export function ProductForm({ open, onOpenChange, product, onSuccess }: ProductFormProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(product?.image_url || null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -70,7 +54,6 @@ export function ProductForm({ open, onOpenChange, product, onSuccess }: ProductF
       name: '',
       price: 0,
       description: '',
-      category: 'other',
       palmstreet_url: '',
       is_available: true,
       is_featured: false,
@@ -83,7 +66,6 @@ export function ProductForm({ open, onOpenChange, product, onSuccess }: ProductF
         name: product.name,
         price: product.price,
         description: product.description || '',
-        category: product.category,
         palmstreet_url: product.palmstreet_url || '',
         is_available: product.is_available,
         is_featured: product.is_featured,
@@ -94,7 +76,6 @@ export function ProductForm({ open, onOpenChange, product, onSuccess }: ProductF
         name: '',
         price: 0,
         description: '',
-        category: 'other',
         palmstreet_url: '',
         is_available: true,
         is_featured: false,
@@ -111,7 +92,6 @@ export function ProductForm({ open, onOpenChange, product, onSuccess }: ProductF
         name: data.name,
         price: data.price,
         description: data.description || null,
-        category: data.category,
         palmstreet_url: data.palmstreet_url || null,
         is_available: data.is_available,
         is_featured: data.is_featured,
@@ -179,31 +159,6 @@ export function ProductForm({ open, onOpenChange, product, onSuccess }: ProductF
                   <FormControl>
                     <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Object.entries(categoryLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

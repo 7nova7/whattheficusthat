@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProductCard } from '@/components/home/ProductCard';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
@@ -17,13 +16,6 @@ interface Product {
   is_available: boolean;
 }
 
-const categories = [
-  { value: 'all', label: 'All Plants' },
-  { value: 'rare_finds', label: 'Rare Finds' },
-  { value: 'aroids', label: 'Aroids' },
-  { value: 'hoyas', label: 'Hoyas' },
-  { value: 'beginner_friendly', label: 'Beginner Friendly' },
-];
 
 // Sample products for when database is empty
 const sampleProducts: Product[] = [
@@ -92,7 +84,6 @@ const sampleProducts: Product[] = [
 export default function Shop() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('all');
 
   useEffect(() => {
     async function fetchProducts() {
@@ -116,10 +107,6 @@ export default function Shop() {
     fetchProducts();
   }, []);
 
-  const filteredProducts = activeCategory === 'all' 
-    ? products 
-    : products.filter(p => p.category === activeCategory);
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -138,43 +125,27 @@ export default function Shop() {
             </p>
           </div>
 
-          {/* Category Tabs */}
-          <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
-            <TabsList className="flex flex-wrap justify-center gap-2 bg-transparent h-auto mb-8">
-              {categories.map((category) => (
-                <TabsTrigger
-                  key={category.value}
-                  value={category.value}
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4 py-2"
-                >
-                  {category.label}
-                </TabsTrigger>
+          {/* Products Grid */}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No plants available at the moment.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {products.map((product, index) => (
+                <ProductCard 
+                  key={product.id} 
+                  product={product} 
+                  index={index}
+                  isInView={true}
+                />
               ))}
-            </TabsList>
-
-            <TabsContent value={activeCategory} className="mt-0">
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : filteredProducts.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">No plants found in this category.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {filteredProducts.map((product, index) => (
-                    <ProductCard 
-                      key={product.id} 
-                      product={product} 
-                      index={index}
-                      isInView={true}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+            </div>
+          )}
         </div>
       </main>
 

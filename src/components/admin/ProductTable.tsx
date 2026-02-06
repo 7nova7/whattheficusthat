@@ -22,21 +22,13 @@ import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Package, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { Tables, Enums } from '@/integrations/supabase/types';
+import type { Tables } from '@/integrations/supabase/types';
 
 interface ProductTableProps {
   products: Tables<'products'>[];
   onEdit: (product: Tables<'products'>) => void;
   onRefresh: () => void;
 }
-
-const categoryLabels: Record<Enums<'product_category'>, string> = {
-  rare_finds: 'Rare Finds',
-  aroids: 'Aroids',
-  hoyas: 'Hoyas',
-  beginner_friendly: 'Beginner Friendly',
-  other: 'Other',
-};
 
 export function ProductTable({ products, onEdit, onRefresh }: ProductTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -83,7 +75,6 @@ export function ProductTable({ products, onEdit, onRefresh }: ProductTableProps)
               <TableHead className="w-16">Image</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Price</TableHead>
-              <TableHead>Category</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Featured</TableHead>
               <TableHead className="w-24">Actions</TableHead>
@@ -107,7 +98,6 @@ export function ProductTable({ products, onEdit, onRefresh }: ProductTableProps)
                 </TableCell>
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>${product.price.toFixed(2)}</TableCell>
-                <TableCell>{categoryLabels[product.category]}</TableCell>
                 <TableCell>
                   <Badge variant={product.is_available ? 'default' : 'secondary'}>
                     {product.is_available ? 'Available' : 'Sold Out'}

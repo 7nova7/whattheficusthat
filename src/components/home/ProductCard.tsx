@@ -21,14 +21,6 @@ interface ProductCardProps {
   isInView?: boolean;
 }
 
-const categoryLabels: Record<string, string> = {
-  rare_finds: 'Rare Find',
-  aroids: 'Aroid',
-  hoyas: 'Hoya',
-  beginner_friendly: 'Beginner Friendly',
-  other: '',
-};
-
 const placeholderImages = [
   'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?q=80&w=800&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1512428813834-c702c7702b78?q=80&w=800&auto=format&fit=crop',
@@ -38,7 +30,6 @@ const placeholderImages = [
 
 export function ProductCard({ product, index = 0, isInView = true }: ProductCardProps) {
   const imageUrl = product.image_url || placeholderImages[index % placeholderImages.length];
-  const categoryLabel = categoryLabels[product.category];
   const palmstreetLink = product.palmstreet_url || 'https://palmstreet.app';
 
   return (
@@ -60,11 +51,6 @@ export function ProductCard({ product, index = 0, isInView = true }: ProductCard
           <div className="absolute inset-0 bg-foreground/60 flex items-center justify-center">
             <span className="text-background font-semibold text-lg">Sold Out</span>
           </div>
-        )}
-        {categoryLabel && (
-          <Badge className="absolute top-3 left-3 bg-secondary text-secondary-foreground">
-            {categoryLabel}
-          </Badge>
         )}
       </div>
 
