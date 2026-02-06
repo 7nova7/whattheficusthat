@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         url: url,
         formats: ['markdown', 'html'],
-        onlyMainContent: true,
+        onlyMainContent: false, // Get full page to capture all content
         waitFor: 3000, // Wait for JS to render
       }),
     });
@@ -96,7 +96,15 @@ Deno.serve(async (req) => {
     if (productData.image_url) {
       try {
         console.log('Downloading image:', productData.image_url);
-        const imageResponse = await fetch(productData.image_url);
+        
+        // Try downloading with proper headers
+        const imageResponse = await fetch(productData.image_url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+            'Referer': 'https://palmstreet.app/',
+          },
+        });
         
         if (imageResponse.ok) {
           const imageBlob = await imageResponse.blob();
@@ -124,6 +132,7 @@ Deno.serve(async (req) => {
           }
         } else {
           console.error('Failed to download image:', imageResponse.status);
+          // Keep original URL if download fails
         }
       } catch (imgError) {
         console.error('Error processing image:', imgError);
@@ -153,90 +162,85 @@ function extractProductData(markdown: string, html: string, metadata: Record<str
   let description: string | null = null;
   let image_url: string | null = null;
 
-  // Try to get title from metadata first
-  if (metadata.title && typeof metadata.title === 'string') {
-    // Clean up the title - remove site name suffix
+  // Extract name from HTML h1 element (most reliable)
+  const h1Match = html.match(/<h1[^>]*class="[^"]*mui-17ixdys[^"]*"[^>]*>([^<]+)<\/h1>/i);
+  if (h1Match && h1Match[1]) {
+    name = h1Match[1].trim();
+  }
+  
+  // Fallback: Try to get title from metadata
+  if (!name && metadata.title && typeof metadata.title === 'string') {
     name = metadata.title.replace(/\s*[-|]\s*PalmStreet.*$/i, '').trim();
+    // Also clean up the price suffix from the title
+    name = name.replace(/\s*\(\$\d+(?:\.\d{2})?\)\s*from\s*@\w+$/i, '').trim();
   }
 
-  // Try to extract name from markdown if not found
-  if (!name) {
-    // Look for the first heading
-    const headingMatch = markdown.match(/^#\s+(.+)$/m);
-    if (headingMatch) {
-      name = headingMatch[1].trim();
-    }
+  // Extract price from the price span
+  const priceMatch = html.match(/<span[^>]*class="[^"]*mui-izg579[^"]*"[^>]*>\$?([\d,.]+)<\/span>/i);
+  if (priceMatch && priceMatch[1]) {
+    price = parseFloat(priceMatch[1].replace(/,/g, ''));
   }
-
-  // Extract price - look for dollar amounts
-  const pricePatterns = [
-    /\$(\d+(?:,\d{3})*(?:\.\d{2})?)/,  // $25.00 or $1,000.00
-    /Price[:\s]*\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/i, // Price: 25.00
-    /(\d+(?:,\d{3})*(?:\.\d{2})?)\s*(?:USD|dollars?)/i, // 25.00 USD
-  ];
-
-  for (const pattern of pricePatterns) {
-    const match = markdown.match(pattern) || html.match(pattern);
-    if (match) {
-      price = parseFloat(match[1].replace(/,/g, ''));
-      break;
-    }
-  }
-
-  // Extract description from metadata first
-  if (metadata.description && typeof metadata.description === 'string') {
-    description = metadata.description.trim();
-  }
-
-  // Try to extract description from markdown if not in metadata
-  if (!description) {
-    // Look for description patterns in markdown
-    const descPatterns = [
-      /(?:description|about|details)[:\s]*\n?(.+?)(?:\n\n|$)/is,
-      /^(?!#)(?!.*\$)(.{50,500}?)(?:\n\n|$)/m, // A paragraph of decent length without $ or heading
+  
+  // Fallback price extraction
+  if (!price) {
+    const pricePatterns = [
+      /\$([\d,]+(?:\.\d{2})?)/,
+      /Price[:\s]*\$?([\d,]+(?:\.\d{2})?)/i,
     ];
-
-    for (const pattern of descPatterns) {
-      const match = markdown.match(pattern);
-      if (match && match[1]) {
-        const cleaned = match[1].trim()
-          .replace(/\[.*?\]\(.*?\)/g, '') // Remove markdown links
-          .replace(/[*_#`]/g, '') // Remove markdown formatting
-          .trim();
-        if (cleaned.length > 20) {
-          description = cleaned;
-          break;
-        }
+    for (const pattern of pricePatterns) {
+      const match = markdown.match(pattern) || html.match(pattern);
+      if (match) {
+        price = parseFloat(match[1].replace(/,/g, ''));
+        break;
       }
     }
   }
 
-  // Extract image URL - prioritize plant images from the image gallery
-  // Look for ogcdn.palmstreet.app or plantstory.app URLs which are actual plant photos
-  const imgPatterns = [
-    // Main product image from plantstory/imaginary resize API
-    /src="(https:\/\/api\.plantstory\.app\/imaginary\/resize\?url=https:\/\/ogcdn\.palmstreet\.app[^"&]+)/i,
-    // Direct ogcdn URLs
-    /src="(https:\/\/ogcdn\.palmstreet\.app\/[^"]+\.(?:jpg|jpeg|png|webp))"/i,
-    // Plantstory URLs with any image
-    /(https:\/\/api\.plantstory\.app\/imaginary\/resize\?url=[^"&\s]+)/i,
-    // ogcdn in any format
-    /(https:\/\/ogcdn\.palmstreet\.app\/[^"'\s]+\.(?:jpg|jpeg|png|webp))/i,
-  ];
+  // Extract FULL description from the product description section
+  // Look for the "Product description" section in HTML
+  const descSectionMatch = html.match(/<h3[^>]*>Product description<\/h3>\s*<p[^>]*class="[^"]*mui-zytwzq[^"]*"[^>]*>([^<]+)<\/p>/i);
+  if (descSectionMatch && descSectionMatch[1]) {
+    description = descSectionMatch[1].trim();
+  }
+  
+  // Also try to find description in a more generic way
+  if (!description) {
+    const descMatch = html.match(/class="[^"]*mui-zytwzq[^"]*"[^>]*>([^<]+)</i);
+    if (descMatch && descMatch[1] && descMatch[1].length > 10) {
+      description = descMatch[1].trim();
+    }
+  }
 
-  for (const pattern of imgPatterns) {
-    const match = html.match(pattern);
-    if (match && match[1]) {
-      image_url = match[1];
-      // Clean up HTML entities
-      image_url = image_url.replace(/&amp;/g, '&');
-      break;
+  // Fallback to metadata description
+  if (!description && metadata.description && typeof metadata.description === 'string') {
+    description = metadata.description.trim();
+  }
+
+  // Extract image URL - get the direct ogcdn URL from plantstory resize URL
+  // Pattern: https://api.plantstory.app/imaginary/resize?url=https://ogcdn.palmstreet.app/...
+  const resizeUrlMatch = html.match(/src="https:\/\/api\.plantstory\.app\/imaginary\/resize\?url=(https:\/\/ogcdn\.palmstreet\.app\/[^&"]+)/i);
+  if (resizeUrlMatch && resizeUrlMatch[1]) {
+    // Use the direct ogcdn URL which is more reliable
+    image_url = decodeURIComponent(resizeUrlMatch[1]);
+  }
+  
+  // Fallback: Try to get direct ogcdn URL
+  if (!image_url) {
+    const ogcdnMatch = html.match(/(https:\/\/ogcdn\.palmstreet\.app\/[^"'\s&]+\.(?:jpg|jpeg|png|webp))/i);
+    if (ogcdnMatch && ogcdnMatch[1]) {
+      image_url = ogcdnMatch[1];
     }
   }
 
   // Fallback: Check og:image metadata
   if (!image_url && metadata.ogImage && typeof metadata.ogImage === 'string') {
-    image_url = metadata.ogImage;
+    // Extract direct URL from ogImage if it's a resize URL
+    const ogImageMatch = (metadata.ogImage as string).match(/url=(https:\/\/ogcdn\.palmstreet\.app\/[^&]+)/);
+    if (ogImageMatch) {
+      image_url = decodeURIComponent(ogImageMatch[1]);
+    } else {
+      image_url = metadata.ogImage as string;
+    }
   }
 
   return {
