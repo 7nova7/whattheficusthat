@@ -6,6 +6,7 @@ const corsHeaders = {
 interface ProductData {
   name: string;
   price: number;
+  description: string | null;
   image_url: string | null;
   palmstreet_url: string;
 }
@@ -103,6 +104,7 @@ Deno.serve(async (req) => {
 function extractProductData(markdown: string, html: string, metadata: Record<string, unknown>, url: string): ProductData {
   let name = '';
   let price = 0;
+  let description: string | null = null;
   let image_url: string | null = null;
 
   // Try to get title from metadata first
@@ -135,6 +137,34 @@ function extractProductData(markdown: string, html: string, metadata: Record<str
     }
   }
 
+  // Extract description from metadata first
+  if (metadata.description && typeof metadata.description === 'string') {
+    description = metadata.description.trim();
+  }
+
+  // Try to extract description from markdown if not in metadata
+  if (!description) {
+    // Look for description patterns in markdown
+    const descPatterns = [
+      /(?:description|about|details)[:\s]*\n?(.+?)(?:\n\n|$)/is,
+      /^(?!#)(?!.*\$)(.{50,500}?)(?:\n\n|$)/m, // A paragraph of decent length without $ or heading
+    ];
+
+    for (const pattern of descPatterns) {
+      const match = markdown.match(pattern);
+      if (match && match[1]) {
+        const cleaned = match[1].trim()
+          .replace(/\[.*?\]\(.*?\)/g, '') // Remove markdown links
+          .replace(/[*_#`]/g, '') // Remove markdown formatting
+          .trim();
+        if (cleaned.length > 20) {
+          description = cleaned;
+          break;
+        }
+      }
+    }
+  }
+
   // Extract image URL from HTML
   const imgPatterns = [
     /<img[^>]+src=["']([^"']+(?:palmstreet|plant|product)[^"']*\.(?:jpg|jpeg|png|webp))/i,
@@ -162,6 +192,7 @@ function extractProductData(markdown: string, html: string, metadata: Record<str
   return {
     name,
     price,
+    description,
     image_url,
     palmstreet_url: url,
   };
