@@ -23,7 +23,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
-    if (!authLoading && !adminLoading && user && !isAdmin) {
+    // Only redirect to homepage if we've confirmed the user is NOT an admin
+    // Wait for both loading states to complete before making this decision
+    if (!authLoading && !adminLoading && user && isAdmin === false) {
+      console.log('User is not an admin, redirecting to homepage');
       navigate('/');
     }
   }, [user, isAdmin, authLoading, adminLoading, navigate]);
