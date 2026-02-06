@@ -11,9 +11,13 @@ export function HeroSection() {
   };
   return <section className="relative min-h-screen flex items-start pt-20 md:pt-24 lg:pt-28 justify-center overflow-hidden">
       {/* Background with overlay */}
-      <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
-      backgroundImage: `url('/lovable-uploads/6981c508-f88f-4bdf-baa6-6c416cf4c78d.png')`
-    }}>
+      <div 
+        className="absolute inset-0 bg-cover bg-no-repeat" 
+        style={{
+          backgroundImage: `url('/lovable-uploads/6981c508-f88f-4bdf-baa6-6c416cf4c78d.png')`,
+          backgroundPosition: 'center 70%'  // Adjust this value: 50% = center, higher % = image moves down
+        }}
+      >
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background/60 my-0" />
       </div>
 
