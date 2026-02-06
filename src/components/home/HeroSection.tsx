@@ -9,7 +9,7 @@ export function HeroSection() {
       });
     }
   };
-  return <section className="relative h-[70vh] min-h-[500px] flex items-start pt-20 md:pt-24 justify-center overflow-hidden">
+  return <section className="relative min-h-screen flex items-start pt-20 md:pt-24 lg:pt-28 justify-center overflow-hidden">
       {/* Background with overlay */}
       <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
       backgroundImage: `url('https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?q=80&w=2074&auto=format&fit=crop')`
