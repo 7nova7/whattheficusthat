@@ -70,6 +70,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_available: boolean
+          is_featured: boolean
           name: string
           palmstreet_url: string | null
           price: number
@@ -82,6 +83,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_available?: boolean
+          is_featured?: boolean
           name: string
           palmstreet_url?: string | null
           price: number
@@ -94,6 +96,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_available?: boolean
+          is_featured?: boolean
           name?: string
           palmstreet_url?: string | null
           price?: number

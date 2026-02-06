@@ -82,16 +82,17 @@ export function ShopSection() {
         const { data, error } = await supabase
           .from('products')
           .select('*')
+          .eq('is_featured', true)
           .order('created_at', { ascending: false })
-          .limit(5);
+          .limit(6);
 
         if (error) throw error;
         
-        // If no products in database, use sample products (limited to 5)
-        setProducts(data && data.length > 0 ? data : sampleProducts.slice(0, 5));
+        // If no featured products in database, use sample products (limited to 6)
+        setProducts(data && data.length > 0 ? data : sampleProducts.slice(0, 6));
       } catch (error) {
         console.error('Error fetching products:', error);
-        setProducts(sampleProducts.slice(0, 5));
+        setProducts(sampleProducts.slice(0, 6));
       } finally {
         setLoading(false);
       }
@@ -125,7 +126,7 @@ export function ShopSection() {
             <p className="text-muted-foreground">No plants available at the moment.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
             {products.map((product, index) => (
               <ProductCard 
                 key={product.id} 
