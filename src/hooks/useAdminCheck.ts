@@ -6,10 +6,13 @@ export function useAdminCheck(userId: string | undefined) {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    // Reset loading state when userId changes
+    setLoading(true);
+    
     async function checkAdminRole() {
       if (!userId) {
-        setIsAdmin(false);
-        setLoading(false);
+        // Don't set loading to false - let the auth system handle this
+        // The AdminLayout will redirect to login if there's no user
         return;
       }
 

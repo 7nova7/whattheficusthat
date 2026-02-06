@@ -31,7 +31,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     }
   }, [user, isAdmin, authLoading, adminLoading, navigate]);
 
-  if (authLoading || adminLoading) {
+  // Show loading while auth is checking OR while admin check is in progress (only if user exists)
+  if (authLoading || (user && adminLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -42,7 +43,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  if (!user || !isAdmin) {
+  // If no user after auth completes, redirect will happen via useEffect
+  if (!user) {
+    return null;
+  }
+
+  // If user exists but is not admin, redirect will happen via useEffect
+  if (!isAdmin) {
     return null;
   }
 
