@@ -32,7 +32,7 @@ export function HeroSection() {
 
           {/* Main Heading */}
           <h1
-            className="font-serif text-5xl md:text-7xl font-bold mb-6 animate-fade-in-up text-center lg:text-7xl text-secondary-foreground"
+            className="font-serif text-5xl md:text-7xl font-bold mb-6 animate-fade-in-up text-center lg:text-7xl text-white"
             style={{
               animationDelay: "0.1s",
             }}
@@ -42,7 +42,7 @@ export function HeroSection() {
 
           {/* Tagline */}
           <p
-            className="text-xl mb-8 animate-fade-in-up font-serif text-secondary-foreground md:text-3xl"
+            className="text-xl mb-8 animate-fade-in-up font-serif text-white md:text-3xl"
             style={{
               animationDelay: "0.2s",
             }}
@@ -75,16 +75,6 @@ export function HeroSection() {
           </div>
         </div>
 
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <button
-            onClick={() => scrollToSection("trust")}
-            className="text-primary/70 hover:text-primary transition-colors"
-            aria-label="Scroll down"
-          >
-            <ArrowDown className="h-8 w-8" />
-          </button>
-        </div>
       </div>
     </section>
   );
