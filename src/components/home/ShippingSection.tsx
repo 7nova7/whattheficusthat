@@ -8,7 +8,7 @@ const shippingOptions = [
     icon: Package,
     title: 'Standard Shipping',
     description: 'Carefully packed and shipped via USPS Priority',
-    price: 'Included',
+    price: ': $16',
     highlight: true,
   },
   {
