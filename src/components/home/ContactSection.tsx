@@ -249,7 +249,7 @@ export function ContactSection() {
                 </a>
 
                 <a
-                  href="https://palmstreet.app"
+                  href="https://palmstreet.app/u/Whattheficusthat?buyer_referral_code=BMvWFQkD"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 p-4 rounded-xl bg-muted hover:bg-muted/80 transition-colors group"
