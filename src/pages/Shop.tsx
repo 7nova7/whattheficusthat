@@ -110,9 +110,15 @@ export default function Shop() {
     fetchProducts();
   }, []);
 
+  // Sort available products first, then sold products at the bottom
+  const sortedProducts = [...products].sort((a, b) => {
+    if (a.is_available === b.is_available) return 0;
+    return a.is_available ? -1 : 1;
+  });
+
   const filteredProducts = hideSold 
-    ? products.filter(p => p.is_available) 
-    : products;
+    ? sortedProducts.filter(p => p.is_available) 
+    : sortedProducts;
 
   return (
     <div className="min-h-screen flex flex-col">
