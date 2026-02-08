@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { ProductCard } from '@/components/home/ProductCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,6 +32,40 @@ export default function ProductDetail() {
       return data;
     },
     enabled: !!id,
+  });
+
+  const { data: similarProducts } = useQuery({
+    queryKey: ['similar-products', id, product?.category],
+    queryFn: async () => {
+      if (!product) return [];
+      
+      // Fetch products in same category first
+      const { data: sameCategoryProducts } = await supabase
+        .from('products')
+        .select('*')
+        .eq('category', product.category)
+        .neq('id', id!)
+        .limit(10);
+
+      let candidates = sameCategoryProducts || [];
+      
+      // If we need more products, fetch from other categories
+      if (candidates.length < 3) {
+        const { data: otherProducts } = await supabase
+          .from('products')
+          .select('*')
+          .neq('id', id!)
+          .neq('category', product.category)
+          .limit(10);
+        
+        candidates = [...candidates, ...(otherProducts || [])];
+      }
+
+      // Shuffle and pick 3 random products
+      const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, 3);
+    },
+    enabled: !!product,
   });
 
   if (isLoading) {
@@ -165,6 +200,31 @@ export default function ProductDetail() {
             </div>
           </div>
         </div>
+
+        {/* You Might Also Like Section */}
+        {similarProducts && similarProducts.length > 0 && (
+          <section className="mt-16 border-t pt-12">
+            <div className="text-center mb-8">
+              <span className="text-accent font-medium text-sm tracking-wider uppercase">
+                Discover More
+              </span>
+              <h2 className="font-serif text-2xl md:text-3xl font-bold text-foreground mt-2">
+                You Might Also Like
+              </h2>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {similarProducts.map((similarProduct, index) => (
+                <ProductCard 
+                  key={similarProduct.id} 
+                  product={similarProduct} 
+                  index={index}
+                  isInView={true}
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </main>
       <Footer />
     </div>
