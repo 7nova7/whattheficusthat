@@ -1,20 +1,21 @@
 
-# Replace Hero Background with Ficus Image
+# Fix Product Card Button Overflow and Redesign Card Layout
 
-## What Will Change
+## The Problem
 
-The hero section will use your uploaded ficus plant image as the full-screen background instead of the current cactus image, while keeping the existing layout intact.
+When displaying 6 product cards in a row (on large screens), the cards become too narrow and the "Buy on PalmStreet" button text gets cut off. The price and button are competing for horizontal space in a single row, causing the button to overflow.
 
-## Design Approach
+## Solution Overview
 
-Since your ficus image has a light pink/cream background, I'll need to adjust the overlay and text colors to ensure readability:
+I'll redesign the product card layout to be more elegant and responsive:
 
-1. **Replace the background image** with your uploaded ficus photo
-2. **Adjust the gradient overlay** - use a lighter, softer overlay that works with the image's light tones
-3. **Update text colors** - switch to darker text colors (forest green/primary) so they're visible against the light background
-4. **Use `background-size: cover`** and `background-position: center`** to ensure the ficus fills the screen and stays centered
+1. **Stack the price and button vertically** instead of side-by-side, giving each full width
+2. **Shorten the button text** to just "Buy Now" with an icon - cleaner and fits better
+3. **Make the button full-width** for a more polished, professional look
+4. **Add a subtle hover effect** on the button for better interactivity
+5. **Reduce grid to 3 columns max** on homepage for better readability (optional based on preference)
 
-The text and buttons will remain in the same position (centered at the top), positioned above the ficus which will fill the background.
+This creates a more professional card design that works at any width.
 
 ---
 
@@ -22,19 +23,60 @@ The text and buttons will remain in the same position (centered at the top), pos
 
 ### File to Modify
 
-| File | Change |
-|------|--------|
-| `src/components/home/HeroSection.tsx` | Replace background URL with ficus image; adjust overlay and text colors for light background |
+| File | Changes |
+|------|---------|
+| `src/components/home/ProductCard.tsx` | Redesign card footer layout with stacked price/button, shorter button text |
+| `src/components/home/ShopSection.tsx` | Optionally reduce max columns from 6 to 4 for better proportions |
 
-### Specific Changes
+### Specific Code Changes
 
-1. **Background image URL**: Change from Unsplash cactus to `/lovable-uploads/6981c508-f88f-4bdf-baa6-6c416cf4c78d.png`
+**ProductCard.tsx - New Card Footer Layout:**
 
-2. **Gradient overlay**: Lighten it significantly since the ficus image is already light - use a subtle white/cream overlay instead of dark green
+```tsx
+{/* Content */}
+<CardContent className="p-4 flex flex-col">
+  <Link to={`/product/${product.id}`}>
+    <h3 className="font-serif text-lg font-semibold text-foreground mb-1 line-clamp-1 hover:text-primary transition-colors">
+      {product.name}
+    </h3>
+  </Link>
+  {product.description && (
+    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+      {product.description}
+    </p>
+  )}
+  
+  {/* Price - Full width */}
+  <span className="font-serif text-xl font-bold text-primary mb-3">
+    ${product.price.toFixed(2)}
+  </span>
+  
+  {/* Button - Full width, stacked below price */}
+  <Button 
+    size="sm" 
+    className="w-full bg-accent hover:bg-accent/90 text-accent-foreground group/btn"
+    asChild
+    disabled={!product.is_available}
+  >
+    <a 
+      href={palmstreetLink} 
+      target="_blank" 
+      rel="noopener noreferrer"
+      className="flex items-center justify-center gap-2"
+    >
+      Buy Now
+      <ExternalLink className="h-3 w-3 transition-transform group-hover/btn:translate-x-0.5" />
+    </a>
+  </Button>
+</CardContent>
+```
 
-3. **Text colors**: Change heading and tagline from `text-accent` (terracotta) to `text-primary` (dark forest green) for better contrast against the light background
+**ShopSection.tsx - Adjusted Grid (optional):**
+- Change `xl:grid-cols-6` to `xl:grid-cols-4` or keep at 6 if preferred
 
-4. **Badge styling**: Adjust the backdrop to work with the light background
+### Visual Result
 
-5. **Scroll indicator**: Update to use a dark color instead of light
-
+- Clean, vertically stacked layout with price above button
+- Full-width "Buy Now" button that never gets cut off
+- Subtle arrow animation on hover
+- Works beautifully at any card width
