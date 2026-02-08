@@ -93,8 +93,8 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a
-                  href="https://palmstreet.app"
+              <a
+                  href="https://palmstreet.app/u/Whattheficusthat?buyer_referral_code=BMvWFQkD"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-primary-foreground/80 hover:text-primary-foreground transition-colors"
