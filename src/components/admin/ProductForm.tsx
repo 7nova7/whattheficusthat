@@ -209,15 +209,15 @@ export function ProductForm({ open, onOpenChange, product, onSuccess }: ProductF
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between rounded-lg border p-3">
                   <div className="space-y-0.5">
-                    <FormLabel>Available</FormLabel>
+                    <FormLabel>Mark as Sold</FormLabel>
                     <p className="text-sm text-muted-foreground">
-                      Show this product on the website
+                      Toggle on when this plant has been sold
                     </p>
                   </div>
                   <FormControl>
                     <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
+                      checked={!field.value}
+                      onCheckedChange={(checked) => field.onChange(!checked)}
                     />
                   </FormControl>
                 </FormItem>
