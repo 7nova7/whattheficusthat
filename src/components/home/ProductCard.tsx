@@ -53,12 +53,14 @@ export function ProductCard({ product, index = 0, isInView = true }: ProductCard
           />
           {!product.is_available && (
             <>
-              {/* Subtle overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+              {/* Stronger overlay for sold items */}
+              <div className="absolute inset-0 bg-black/40" />
               
-              {/* Diagonal ribbon badge */}
-              <div className="absolute top-4 -right-8 bg-destructive text-destructive-foreground text-xs font-bold py-1 px-10 rotate-45 shadow-lg tracking-wider">
-                SOLD
+              {/* Large diagonal SOLD banner spanning full image */}
+              <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                <div className="bg-destructive text-destructive-foreground text-2xl md:text-3xl font-bold py-3 px-20 -rotate-45 shadow-xl tracking-widest w-[150%] text-center">
+                  SOLD
+                </div>
               </div>
             </>
           )}
