@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Edit, Trash2, Package, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -33,6 +34,22 @@ interface ProductTableProps {
 export function ProductTable({ products, onEdit, onRefresh }: ProductTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleToggleSold = async (productId: string, isSold: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_available: !isSold })
+        .eq('id', productId);
+
+      if (error) throw error;
+      toast.success(isSold ? 'Product marked as sold' : 'Product marked as available');
+      onRefresh();
+    } catch (error) {
+      console.error('Error updating product:', error);
+      toast.error('Failed to update product status');
+    }
+  };
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -99,9 +116,15 @@ export function ProductTable({ products, onEdit, onRefresh }: ProductTableProps)
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>${product.price.toFixed(2)}</TableCell>
                 <TableCell>
-                  <Badge variant={product.is_available ? 'default' : 'secondary'}>
-                    {product.is_available ? 'Available' : 'Sold Out'}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={!product.is_available}
+                      onCheckedChange={(checked) => handleToggleSold(product.id, checked)}
+                    />
+                    <Badge variant={product.is_available ? 'default' : 'destructive'}>
+                      {product.is_available ? 'Available' : 'Sold'}
+                    </Badge>
+                  </div>
                 </TableCell>
                 <TableCell>
                   {product.is_featured && (

@@ -46,12 +46,21 @@ export function ProductCard({ product, index = 0, isInView = true }: ProductCard
           <img
             src={imageUrl}
             alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            className={cn(
+              "w-full h-full object-cover transition-all duration-500 group-hover:scale-110",
+              !product.is_available && "grayscale-[60%] brightness-90"
+            )}
           />
           {!product.is_available && (
-            <div className="absolute inset-0 bg-foreground/60 flex items-center justify-center">
-              <span className="text-background font-semibold text-lg">Sold Out</span>
-            </div>
+            <>
+              {/* Subtle overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+              
+              {/* Diagonal ribbon badge */}
+              <div className="absolute top-4 -right-8 bg-destructive text-destructive-foreground text-xs font-bold py-1 px-10 rotate-45 shadow-lg tracking-wider">
+                SOLD
+              </div>
+            </>
           )}
         </div>
       </Link>
@@ -70,7 +79,10 @@ export function ProductCard({ product, index = 0, isInView = true }: ProductCard
         )}
         
         {/* Price - Full width */}
-        <span className="font-serif text-xl font-bold text-primary mb-3">
+        <span className={cn(
+          "font-serif text-xl font-bold mb-3",
+          product.is_available ? "text-primary" : "text-muted-foreground line-through"
+        )}>
           ${product.price.toFixed(2)}
         </span>
         
