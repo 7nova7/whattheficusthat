@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface Product {
   id: string;
@@ -84,6 +86,7 @@ const sampleProducts: Product[] = [
 export default function Shop() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hideSold, setHideSold] = useState(false);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -107,6 +110,10 @@ export default function Shop() {
     fetchProducts();
   }, []);
 
+  const filteredProducts = hideSold 
+    ? products.filter(p => p.is_available) 
+    : products;
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -114,7 +121,7 @@ export default function Shop() {
       <main className="flex-1 py-16 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           {/* Header */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <span className="text-accent font-medium mb-2 block">Our Collection</span>
             <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-4">
               Shop All Plants 🌿
@@ -125,18 +132,32 @@ export default function Shop() {
             </p>
           </div>
 
+          {/* Filter */}
+          <div className="flex items-center justify-end gap-3 mb-6">
+            <Label htmlFor="hide-sold" className="text-sm text-muted-foreground cursor-pointer">
+              Hide sold items
+            </Label>
+            <Switch
+              id="hide-sold"
+              checked={hideSold}
+              onCheckedChange={setHideSold}
+            />
+          </div>
+
           {/* Products Grid */}
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : products.length === 0 ? (
+          ) : filteredProducts.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">No plants available at the moment.</p>
+              <p className="text-muted-foreground">
+                {hideSold ? 'All plants have been sold! Check back soon for new additions.' : 'No plants available at the moment.'}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {products.map((product, index) => (
+              {filteredProducts.map((product, index) => (
                 <ProductCard 
                   key={product.id} 
                   product={product} 
